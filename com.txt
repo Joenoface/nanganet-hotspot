@@ -1,0 +1,4 @@
+cd hotspot-mpesa-system; Get-Content schema.sql; npm start
+
+
+cd hotspot-mpesa-system; ngrok http 3000
