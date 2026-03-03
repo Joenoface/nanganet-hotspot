@@ -11,6 +11,23 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '4000'),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  ssl: {
+    minVersion: 'TLSv1.2',
+    rejectUnauthorized: true
+  },
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
 // ========== ADMIN AUTH (simple, production-ready enough for start) ==========
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'admin2026';   // ← CHANGE THIS IMMEDIATELY!
@@ -33,13 +50,6 @@ function isAdminAuth(req, res, next) {
   }
   next();
 }
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
-});
 
 const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT}`;
 const DARAJA_BASE = 'https://sandbox.safaricom.co.ke'; // change to https://api.safaricom.co.ke for live
