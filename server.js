@@ -11,22 +11,49 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-
-
-const pool = mysql.createPool({
+console.log('🚀 Starting NangaNet server...');
+console.log('DB Config:', {
   host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '4000'),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  ssl: {
-    minVersion: 'TLSv1.2',
-    rejectUnauthorized: true
-  },
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  port: process.env.DB_PORT || '4000',
+  user: process.env.DB_USER ? '***' : 'MISSING',
+  database: process.env.DB_NAME || 'MISSING',
+  ssl: 'ENABLED (required for TiDB)'
 });
+
+// FIXED + DEBUG TiDB Cloud Pool (Serverless Free Tier)
+let pool;
+try {
+  pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || '4000'),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    ssl: {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true
+    },
+    waitForConnections: true,
+    connectionLimit: 5,      // Free tier safe
+    queueLimit: 0,
+    enableKeepAlive: true
+  });
+  console.log('✅ DB Pool created successfully');
+} catch (err) {
+  console.error('❌ DB Pool creation FAILED:', err.message);
+}
+
+// Health check (test this after deploy!)
+app.get('/health', async (req, res) => {
+  try {
+    const [rows] = await pool.execute('SELECT 1 as alive');
+    res.json({ status: 'OK', db: 'connected', timestamp: new Date() });
+  } catch (err) {
+    res.status(500).json({ status: 'DB_ERROR', message: err.message });
+  }
+});
+
+console.log('✅ All routes & middleware loaded');
 
 // ========== ADMIN AUTH (simple, production-ready enough for start) ==========
 const ADMIN_USERNAME = 'admin';
